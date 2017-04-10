@@ -41,8 +41,13 @@ struct hot_v {
     int vertex;
     int hot;
 };
+struct server{
+    int capability;
+    int serverPrice;
+    server(int c, int s) :capability(c), serverPrice(s){}
+};
 
-const int N = 1002;
+const int N = 10002;
 
 typedef pair<int, int> PAIR;
 void process_data(const char * const filename,const char * const resultfile);

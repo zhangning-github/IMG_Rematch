@@ -12,7 +12,10 @@
 #include <sys/time.h>
 
 using namespace std;
-const int COST=10000;
+const int COST=100000;
+int CAP;
+vector<server>serverInfo;
+map<int,int>nodePrice;
 vector<int> occurrence;//出现次数
 map<int,int> node_consumer; //记录consumer和与其相连的点（<node,consumer>）
 //map<int,int> bwMap;//从1开始
@@ -119,7 +122,8 @@ void addedge(int from, int to, int cap, int cost)
 void init_graph(vector<int> select){
     clear_graph();
     for(int i=0;i<select.size();i++){
-        addedge(0, select[i], COST,0);
+        //addedge(0, select[i], COST,0);//修改
+        addedge(0, select[i], CAP,0);  //添加
     }
     for(int i=1;i<n;i++){
         for(int j=0;j<saveG[i].size();j++)
@@ -142,7 +146,8 @@ void clear_graph(){
 void getf()
 {
     for(auto it=G[0].begin();it!=G[0].end();it++){
-        f[0][it->to]=COST-it->cap;
+        //f[0][it->to]=COST-it->cap;
+        f[0][it->to]=CAP-it->cap;
     }
     for(int i=1;i<n;i++) {
         for(auto it=G[i].begin();it!=G[i].end();it++){
@@ -152,11 +157,13 @@ void getf()
     }
 }
 
+
 //得到求取路径所必须的f[][]和mydege[][]
 void getfAndedge()   //f and mydege
 {
     for(auto it=G[0].begin();it!=G[0].end();it++){
-        f[0][it->to]=COST-it->cap;
+        //f[0][it->to]=COST-it->cap;
+        f[0][it->to]=CAP-it->cap;
     }
     for(int i=1;i<n;i++) {
         for(auto it=G[i].begin();it!=G[i].end();it++){
@@ -175,6 +182,8 @@ void getfAndedge()   //f and mydege
         }
     }
 }
+
+
 
 //在求取路径函数：getpath()中调用，用于每找出一条路径更新流图
 void dosomething(vector<int>& p, int f1) {
@@ -290,6 +299,8 @@ void process_data(const char * const filename,const char * const resultfile){
     ifstream in;
     ofstream out;
     int m,u,v,b,p;
+    int rank,capability,serverPrice;
+    int id,nodeprice;
     
     in.open(filename);
     
@@ -299,9 +310,31 @@ void process_data(const char * const filename,const char * const resultfile){
         return ;
     }
     in>>n>>m>>consumerNum;
-    //cout<<n<<","<<m<<","<<consumerNum<<endl;
-    in>>serverPrice;
-    //cout<<serverPrice<<endl;
+    cout<<n<<","<<m<<","<<consumerNum<<endl;
+    
+    
+    in>>rank>>capability>>serverPrice;
+    serverInfo.push_back(server(capability,serverPrice));
+    cout<<rank<<" "<<capability<<" "<<serverPrice<<endl;
+    while (in>>rank&&rank!=0) {
+        in>>capability>>serverPrice;
+        serverInfo.push_back(server(capability,serverPrice));
+        cout<<rank<<" "<<capability<<" "<<serverPrice<<endl;
+    }
+    
+    //读取节点部署费用
+    for(int i=0;i<n;i++)
+    {
+        if(i==0){
+            id=rank;
+            in>>nodeprice;
+        }
+        else{
+            in>>id>>nodeprice;
+        }
+        cout<<id<<" "<<nodeprice<<endl;
+        nodePrice.insert(make_pair(id+1, nodeprice));
+    }
     for(int i=0;i <=n;i++)
     {
         bw.push_back(0);
@@ -310,11 +343,12 @@ void process_data(const char * const filename,const char * const resultfile){
         occurrence.push_back(0);
     }
     
+    //读取边及相关信息
     for(int i=0;i<m;i++)
     {
         in>>u>>v>>b>>p;
         
-        //cout<<u<<","<<v<<","<<bw<<","<<p<<endl;
+        cout<<u<<","<<v<<","<<b<<","<<p<<endl;
         //此处可构建图
         occurrence[u+1]++;
         occurrence[v+1]++;
@@ -369,12 +403,15 @@ void process_data(const char * const filename,const char * const resultfile){
         need+=b;
         c[v+1][n-1]=b;
         bandwidth[v+1][n-1]=b;
-        saveG[v+1].push_back(Edge(n-1,b,0,(int)saveG[n-1].size()));
-        //cout<<u<<","<<v<<","<<bw<<endl;
+        saveG[v+1].push_back(Edge(n-1,b,0,saveG[n-1].size()));
+        
+        cout<<u<<","<<v<<","<<b<<endl;
         selected.push_back(v+1);
     }
     in.close();
     out.close();
+    
+    CAP=serverInfo[serverInfo.size()-1].capability;//添加
     
 }
 
