@@ -153,7 +153,7 @@ void getf()
 }
 
 //得到求取路径所必须的f[][]和mydege[][]
-void getfAndPath()   //f and mydege
+void getfAndedge()   //f and mydege
 {
     for(auto it=G[0].begin();it!=G[0].end();it++){
         f[0][it->to]=COST-it->cap;
@@ -429,7 +429,7 @@ int main(int argc, char *argv[])
         init_graph(selected);
         PAIR result=mcmf(0, n-1);
         if(result.first==need&&(result.second+selected.size()<consumerNum*serverPrice)){
-            getfAndPath();
+            getfAndedge();
             writeresult(result_file);
         }
     }
@@ -444,7 +444,7 @@ int main(int argc, char *argv[])
             init_graph(best);
             PAIR result=mcmf(0, n-1);
             if(result.first==need&&(result.second+best.size()<consumerNum*serverPrice)){
-                getfAndPath();
+                getfAndedge();
                 writeresult(result_file);
             }
         }
@@ -454,7 +454,7 @@ int main(int argc, char *argv[])
             init_graph(best);
             PAIR result=mcmf(0, n-1);
             if(result.first==need&&(result.second+best.size()<consumerNum*serverPrice)){
-                getfAndPath();
+                getfAndedge();
                 writeresult(result_file);
             }
             

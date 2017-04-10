@@ -65,6 +65,6 @@ void init_graph(vector<int> select);
 vector<valueofOp> getdropN(vector<int> solution);
 void sortbyflow_edge(vector<int>& solution);
 long diff_in_us(struct timeval *finishtime, struct timeval * starttime);
-void getfAndPath();
+void getfAndedge();
 void getf();
 #endif
