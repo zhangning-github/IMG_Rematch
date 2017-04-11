@@ -7,6 +7,9 @@ using namespace std;
 double alpha=0.1; //热度列表需用到的参数
 double beta=0.1;  //热度列表需用到的参数
 extern int serverPrice;//服务器单价
+extern vector<server>serverInfo;//存储不同档次服务器的输出能力和对应的费用信息
+extern map<int,int>nodePrice;//存储不同网络节点的部署费用
+int originprice;//存储初始解的费用
 extern vector<int> occurrence;//出现次数
 extern map<int,int> node_consumer; //记录consumer和与其相连的点（<node,consumer>）
 int tabuList_len=20;                      //禁忌列表大小，初始化为3
@@ -161,7 +164,7 @@ initial getinitial(long long time,double arg1,double arg2)
     PAIR cur,cur2;
     int now;
     vector<int> save=selected;
-    int originprice=consumerNum*serverPrice;
+    originprice=CostofServerAndDeployment(selected);
     int bestprice=originprice;
     long long time_used;
     struct timeval start,finish;
@@ -185,7 +188,7 @@ initial getinitial(long long time,double arg1,double arg2)
             s.erase(it);
             init_graph(s);
             cur=mcmf(0,n-1);
-            int now=cur.second+(int)s.size()*serverPrice;
+            int now=cur.second+CostofServerAndDeployment(s);
             if(cur.first==need&&now<bestprice)
             {
                 if(bestprice-now>serverPrice/arg1)
@@ -228,7 +231,7 @@ initial getinitial(long long time,double arg1,double arg2)
                 s.erase(it);
                 init_graph(s);
                 cur=mcmf(0,n-1);
-                int now=cur.second+(int)s.size()*serverPrice;
+                int now=cur.second+cur.second+CostofServerAndDeployment(s);
                 if(cur.first==need&&(now<bestprice)&&(bestprice-now>serverPrice/arg2))
                 {
                     bestprice=now;
@@ -257,7 +260,7 @@ initial getinitial(long long time,double arg1,double arg2)
             s.erase(it);
             init_graph(s);
             cur=mcmf(0,n-1);
-            int now=cur.second+(int)s.size()*serverPrice;
+            int now=cur.second+cur.second+CostofServerAndDeployment(s);
             if(cur.first==need&&(now<bestprice))
             {
                 bestprice=now;
@@ -401,6 +404,28 @@ void updateBad(int value){
     }
     bad.push_back(value);
 }
+
+//根据某一种特定的部署方案，返回购买相应档次的服务器和部署服务器的总成本
+int CostofServerAndDeployment(vector<int> solution) {
+    int cost=0;
+    int totalflow;
+    for(auto depot:solution) {
+        totalflow = 0;
+        for (int i=0; i<n; i++) {
+            if(f[depot][i]>0)
+                totalflow+=f[depot][i];
+        }
+        for(auto server:serverInfo) {
+            if(server.capability>totalflow) {
+                cost+=server.serverPrice;
+                break;
+            }
+        }
+        cost+=nodePrice[depot];
+    }
+    return cost;
+}
+
 //禁忌搜索，用于初中级用例
 vector<int> Tabu_search(initial r,long long time) {
     //生成Tlist列表
@@ -439,7 +464,7 @@ vector<int> Tabu_search(initial r,long long time) {
         for(auto valueof_dropN:op) {
             init_graph(valueof_dropN.solution);
             auto cur=mcmf(0,n-1);
-            auto tmpcost = cur.second+valueof_dropN.solution.size()*serverPrice;
+            auto tmpcost = cur.second+CostofServerAndDeployment(valueof_dropN.solution);
             if(cur.first!=need)continue;
             //            cout<<"drop cost："<<tmpcost<<endl;
             drop_tmp.solution = valueof_dropN.solution;
@@ -482,7 +507,7 @@ vector<int> Tabu_search(initial r,long long time) {
             for(auto it:op) {
                 init_graph(it.solution);
                 auto cur=mcmf(0,n-1);
-                auto tmpcost = cur.second+it.solution.size()*serverPrice;
+                auto tmpcost = cur.second+CostofServerAndDeployment(it.solution);
                 if(cur.first!=need)continue;
                 if(tmpcost<curcost) {
                     int tmpcount=0;
