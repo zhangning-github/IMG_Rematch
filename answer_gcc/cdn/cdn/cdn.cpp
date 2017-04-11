@@ -446,8 +446,19 @@ void writeresult(char * result_file)
     
 }
 void getServer_level(vector<int> solution) {
+    int totalflow;
     for(auto depot:solution) {
-        mapofselected[depot]=nodePrice[depot];
+        totalflow = 0;
+        for (int i=0; i<n; i++) {
+            if(f[depot][i]>0)
+                totalflow+=f[depot][i];
+        }
+        for (int i=0; i<serverInfo.size(); i++) {
+            if (serverInfo[i].capability>totalflow) {
+                mapofselected[depot]=i;
+                break;
+            }
+        }
     }
 }
 
