@@ -165,13 +165,24 @@ void highlevel(long long time,double arg1,double arg2){
     int bestprice=originprice;
     vector<int> save=selected;
     gettimeofday(&start,NULL);
+    int threshold;
+    int mini1=10000000,mini2=1000000;
+    for(auto it=nodePrice.begin();it!=nodePrice.end();it++){
+        mini1=min(it->second,mini1);
+    }
+    for(auto it=serverInfo.begin();it!=serverInfo.end();it++){
+        mini2=min(it->serverPrice,mini2);
+    }
+    threshold=max(mini1,mini2);
     TIME=87000000;
+    int count=0;
     for(int i=0;i<selected.size();i++)
     {
+        count++;
         gettimeofday(&finish, NULL);
         time_used=diff_in_us(&finish, &start)+time;
         if(time_used>TIME) {
-            cout<<"Time is used!"<<endl;
+            cout<<"1.Time is used!"<<endl;
             break;
         }
         vector<int> s=selected;
@@ -179,11 +190,13 @@ void highlevel(long long time,double arg1,double arg2){
         s.erase(it);
         init_graph(s);
         cur=mcmf(0,n-1);
-        getf();
-        int now=cur.second+CostofServerAndDeployment(s);
+        getPartf();
+        now=cur.second+CostofServerAndDeployment(s);;
+//        cout<<"need="<<need<<",提供:"<<cur.first<<endl;
+//        cout<<"now="<<now<<"tmp="<<tmp<<endl;
         if(cur.first==need&&now<bestprice)
         {
-            if(bestprice-now>serverPrice/arg1)
+            if(bestprice-now>threshold/arg1)
             {
                 bestprice=now;
                 selected=s;
@@ -193,6 +206,7 @@ void highlevel(long long time,double arg1,double arg2){
         else
             bad.push_back(selected[i]);
     }
+    cout<<"1.best"<<bestprice<<endl;
     for(int i=0;i<selected.size();i++){
         for(int j=0;j<selected.size();j++){
             if(c[selected[i]][selected[j]]>0)
@@ -208,7 +222,7 @@ void highlevel(long long time,double arg1,double arg2){
         gettimeofday(&finish, NULL);
         time_used=diff_in_us(&finish, &start)+time;
         if(time_used>TIME) {
-            cout<<"Time is used!"<<endl;
+            cout<<"2.Time is used!"<<endl;
             break;
         }
         
@@ -223,8 +237,9 @@ void highlevel(long long time,double arg1,double arg2){
             s.erase(it);
             init_graph(s);
             cur=mcmf(0,n-1);
-            int now=cur.second+cur.second+CostofServerAndDeployment(s);
-            if(cur.first==need&&(now<bestprice)&&(bestprice-now>serverPrice/arg2))
+            getPartf();
+            now=cur.second+CostofServerAndDeployment(s);
+            if(cur.first==need&&now<bestprice&&(bestprice-now>threshold/arg2))
             {
                 bestprice=now;
                 for(auto t=save.begin();t!=save.end();t++){
@@ -239,12 +254,13 @@ void highlevel(long long time,double arg1,double arg2){
         }
         
     }
+    cout<<"2.best"<<bestprice<<endl;
     for(int i=0;i<selected.size();i++)
     {
         gettimeofday(&finish, NULL);
         time_used=diff_in_us(&finish, &start)+time;
         if(time_used>TIME) {
-            cout<<"Time is used!"<<endl;
+            cout<<"3.Time is used!"<<endl;
             break;
         }
         vector<int> s=selected;
@@ -252,7 +268,8 @@ void highlevel(long long time,double arg1,double arg2){
         s.erase(it);
         init_graph(s);
         cur=mcmf(0,n-1);
-        int now=cur.second+cur.second+CostofServerAndDeployment(s);
+        getPartf();;
+        int now=cur.second+CostofServerAndDeployment(s);
         if(cur.first==need&&(now<bestprice))
         {
             bestprice=now;
@@ -260,22 +277,27 @@ void highlevel(long long time,double arg1,double arg2){
         }
         
     }
+    cout<<"直接挂载："<<originprice<<endl;
+    cout<<"best:"<<bestprice<<endl;
+    cout<<"count:"<<count<<endl;
+    cout<<save.size()<<endl;
+    cout<<selected.size()<<endl;
 
 }
-//获得初始解,
-initial getinitial()
+//获得初始花费
+void getinitial()
 {
-    initial r;
-    originprice=CostofServerAndDeployment(selected);
+    originprice=0;
+    for(auto depot:selected) {
+        for(auto server:serverInfo) {
+            if(server.capability>c[depot][n-1]) {
+                originprice+=server.serverPrice;
+                break;
+            }
+        }
+        originprice+=nodePrice[depot];
+    }
 
-    
-    //    cout<<"min cost"<<bestprice<<endl;
-    //    cout<<"直接挂载："<<consumerNum*serverPrice<<endl;
-    //    cout<<selected.size()<<endl;
-    //    cout<<consumerNum<<endl;
-    r.s = (int)selected.size();
-    r.cost=0;
-    return r;
 }
 
 //找到由于swap操作产生的候选解集,候选解集的大小为solution的长度，候选集为通过solution中的每个元素
@@ -407,11 +429,11 @@ int CostofServerAndDeployment(vector<int> solution) {
     int cost=0;
     int totalflow;
     for(auto depot:solution) {
-        totalflow = 0;
-        for (int i=0; i<n; i++) {
-            if(f[depot][i]>0)
-                totalflow+=f[depot][i];
-        }
+        totalflow = f[0][depot];
+//        for (int i=0; i<n; i++) {
+//            if(f[depot][i]>0)
+//                totalflow+=f[depot][i];
+//        }
         for(auto server:serverInfo) {
             if(server.capability>totalflow) {
                 cost+=server.serverPrice;

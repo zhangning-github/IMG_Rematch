@@ -54,8 +54,7 @@ void process_data(const char * const filename,const char * const resultfile);
 int cmp(const PAIR &x, const PAIR &y);
 void getsortbyBwandE();
 void getTlist();
-initial getinitial();
-
+void getinitial();
 void dosomething(vector<int>& p, int f1);
 valueofOp dosomething2(vector<Solution_and_cost> nerbou, vector<pair<int, int>> tabuList);
 list<path> getpath();
@@ -72,6 +71,7 @@ void sortbyflow_edge(vector<int>& solution);
 long diff_in_us(struct timeval *finishtime, struct timeval * starttime);
 void getfAndedge();
 void getf();
+void getPartf();
 int CostofServerAndDeployment(vector<int> solution);
 void highlevel(long long time,double arg1,double arg2);
 #endif

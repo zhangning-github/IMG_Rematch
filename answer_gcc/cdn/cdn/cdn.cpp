@@ -35,7 +35,7 @@ int n=0; // vertex number
 //int h[N]; // height of the vertex
 int c[N][N]={0}; // capacity of the edge
 int bandwidth[N][N]={0};  //每条边的带宽
-int f[N][N]; // flow of the edge
+int f[N][N]={0}; // flow of the edge
 //list<int> ev; // excess flow vertex
 //list<int> edge[N]; // edge link list
 vector<int> mydege[N];
@@ -144,6 +144,7 @@ void clear_graph(){
     
 }
 
+
 //跑完最小流后，通过该函数得到实际流图，存储在f[][]中
 void getf()
 {
@@ -158,7 +159,19 @@ void getf()
         }
     }
 }
-
+void getPartf()
+{
+    for(auto it=G[0].begin();it!=G[0].end();it++){
+        //f[0][it->to]=COST-it->cap;
+        f[0][it->to]=CAP-it->cap;
+    }
+    //    for(int i=1;i<n;i++) {
+    //        for(auto it=G[i].begin();it!=G[i].end();it++){
+    //            if(it->cost>=0)
+    //                f[i][it->to]=c[i][it->to]-it->cap;
+    //        }
+    //    }
+}
 
 //得到求取路径所必须的f[][]和mydege[][]
 void getfAndedge()   //f and mydege
@@ -389,18 +402,18 @@ void process_data(const char * const filename,const char * const resultfile){
     n+=2;
     
     need=0;
-    out.open(resultfile);
-    if(!out)
-    {
-        cout<<"Error opening output stream!"<<endl;
-        return ;
-    }
-    out<<consumerNum<<"\n";
-    out<<"\n";
+//    out.open(resultfile);
+//    if(!out)
+//    {
+//        cout<<"Error opening output stream!"<<endl;
+//        return ;
+//    }
+//    out<<consumerNum<<"\n";
+//    out<<"\n";
     for(int i=0;i<consumerNum;i++)
     {
         in>>u>>v>>b;
-        out<<v<<" "<<u<<" "<<b<<"\n";
+        //out<<v<<" "<<u<<" "<<b<<"\n";
         node_consumer.insert(pair<int,int>(v+1,u+1));
         need+=b;
         c[v+1][n-1]=b;
@@ -411,7 +424,7 @@ void process_data(const char * const filename,const char * const resultfile){
         selected.push_back(v+1);
     }
     in.close();
-    out.close();
+    //out.close();
     
     CAP=serverInfo[serverInfo.size()-1].capability;//添加
     
@@ -420,11 +433,7 @@ void process_data(const char * const filename,const char * const resultfile){
 void getServer_level(vector<int> solution) {
     int totalflow;
     for(auto depot:solution) {
-        totalflow = 0;
-        for (int i=0; i<n; i++) {
-            if(f[depot][i]>0)
-                totalflow+=f[depot][i];
-        }
+        totalflow = f[0][depot];
         for (int i=0; i<serverInfo.size(); i++) {
             if (serverInfo[i].capability>totalflow) {
                 mapofselected[depot]=i;
@@ -481,14 +490,14 @@ int main(int argc, char *argv[])
         get_H_tral();
         getsortByH_E();
     }
-    double a=1.85,b=3;
+    double a=1,b=3;
     
-    initial r=getinitial();
+    getinitial();
    // if(n>700)
     {
         gettimeofday(&finish, NULL);
         //cout<<diff_in_us(&finish, &start)<<endl;
-        highlevel(diff_in_us(&finish, &start),a,a*b);
+        highlevel(diff_in_us(&finish, &start),a,b);
         init_graph(selected);
         PAIR result=mcmf(0, n-1);
         //cout<<result.second+CostofServerAndDeployment(selected)<<","<<originprice<<endl;

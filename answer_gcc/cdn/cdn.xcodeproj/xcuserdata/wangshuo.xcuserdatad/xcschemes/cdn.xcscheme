@@ -64,7 +64,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "case_example/1/case0.txt"
+            argument = "case_example/2/case0.txt"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
