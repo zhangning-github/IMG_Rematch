@@ -401,6 +401,7 @@ void updateBad(int value){
     }
     bad.push_back(value);
 }
+
 //禁忌搜索，用于初中级用例
 vector<int> Tabu_search(initial r,long long time) {
     //生成Tlist列表
