@@ -47,7 +47,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "/Users/wangshuo/IMGforhuawei/answer_gcc/cdn/cdn"
+      customWorkingDirectory = "/Users/wangshuo/Code/github/IMG_Rematch/answer_gcc/cdn/cdn"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -64,7 +64,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "case0.txt"
+            argument = "case_example/1/case0.txt"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

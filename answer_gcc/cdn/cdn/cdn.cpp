@@ -18,6 +18,8 @@ vector<server>serverInfo;
 map<int,int>nodePrice;
 vector<int> occurrence;//出现次数
 map<int,int> node_consumer; //记录consumer和与其相连的点（<node,consumer>）
+map<int,int> mapofselected; //维护最优解中选中点ID和其档次的映射
+extern int originprice;//存储初始解的费用
 //map<int,int> bwMap;//从1开始
 int price[N][N]={0}; //每条边的单位租用费
 int consumerNum; //消费节点数量
@@ -310,16 +312,16 @@ void process_data(const char * const filename,const char * const resultfile){
         return ;
     }
     in>>n>>m>>consumerNum;
-    cout<<n<<","<<m<<","<<consumerNum<<endl;
+    //cout<<n<<","<<m<<","<<consumerNum<<endl;
     
     
     in>>rank>>capability>>serverPrice;
     serverInfo.push_back(server(capability,serverPrice));
-    cout<<rank<<" "<<capability<<" "<<serverPrice<<endl;
+    //cout<<rank<<" "<<capability<<" "<<serverPrice<<endl;
     while (in>>rank&&rank!=0) {
         in>>capability>>serverPrice;
         serverInfo.push_back(server(capability,serverPrice));
-        cout<<rank<<" "<<capability<<" "<<serverPrice<<endl;
+        //cout<<rank<<" "<<capability<<" "<<serverPrice<<endl;
     }
     
     //读取节点部署费用
@@ -332,7 +334,7 @@ void process_data(const char * const filename,const char * const resultfile){
         else{
             in>>id>>nodeprice;
         }
-        cout<<id<<" "<<nodeprice<<endl;
+        //cout<<id<<" "<<nodeprice<<endl;
         nodePrice.insert(make_pair(id+1, nodeprice));
     }
     for(int i=0;i <=n;i++)
@@ -348,7 +350,7 @@ void process_data(const char * const filename,const char * const resultfile){
     {
         in>>u>>v>>b>>p;
         
-        cout<<u<<","<<v<<","<<b<<","<<p<<endl;
+        //cout<<u<<","<<v<<","<<b<<","<<p<<endl;
         //此处可构建图
         occurrence[u+1]++;
         occurrence[v+1]++;
@@ -405,7 +407,7 @@ void process_data(const char * const filename,const char * const resultfile){
         bandwidth[v+1][n-1]=b;
         saveG[v+1].push_back(Edge(n-1,b,0,saveG[n-1].size()));
         
-        cout<<u<<","<<v<<","<<b<<endl;
+        //cout<<u<<","<<v<<","<<b<<endl;
         selected.push_back(v+1);
     }
     in.close();
@@ -415,6 +417,22 @@ void process_data(const char * const filename,const char * const resultfile){
     
 }
 
+void getServer_level(vector<int> solution) {
+    int totalflow;
+    for(auto depot:solution) {
+        totalflow = 0;
+        for (int i=0; i<n; i++) {
+            if(f[depot][i]>0)
+                totalflow+=f[depot][i];
+        }
+        for (int i=0; i<serverInfo.size(); i++) {
+            if (serverInfo[i].capability>totalflow) {
+                mapofselected[depot]=i;
+                break;
+            }
+        }
+    }
+}
 //将最终结果按要求的格式写到文件中
 void writeresult(char * result_file)
 {
@@ -439,7 +457,12 @@ void writeresult(char * result_file)
             
         }
         out<<node_consumer.at(it->p.back())-1<<" ";
-        out<<it->f<<"\n";
+        //out<<it->f<<"\n";
+        out<<it->f<<" ";
+        it2 = it->p.begin();
+        it2++;
+        out<<mapofselected[*it2]<<"\n";
+        
     }
     
 }
@@ -459,47 +482,54 @@ int main(int argc, char *argv[])
         getsortByH_E();
     }
     double a=1.85,b=3;
-    gettimeofday(&finish, NULL);
-    initial r=getinitial(diff_in_us(&finish, &start),a,a*b);
-    if(n>700)
+    
+    initial r=getinitial();
+   // if(n>700)
     {
+        gettimeofday(&finish, NULL);
+        //cout<<diff_in_us(&finish, &start)<<endl;
+        highlevel(diff_in_us(&finish, &start),a,a*b);
         init_graph(selected);
         PAIR result=mcmf(0, n-1);
-        if(result.first==need&&(result.second+selected.size()<consumerNum*serverPrice)){
+        //cout<<result.second+CostofServerAndDeployment(selected)<<","<<originprice<<endl;
+        //if(result.first==need&&(result.second+CostofServerAndDeployment(selected)<originprice)){
             getfAndedge();
+            getServer_level(selected);
             writeresult(result_file);
-        }
+        //}
     }
     
     // cout<<"初始解"<<r.s<<","<<r.cost+r.s*serverPrice<<"\n";
     //cout<<"直接挂载："<<consumerNum*serverPrice<<endl;
-    if(n<700)
-    {
-        gettimeofday(&finish, NULL);
-        if(n>200){
-            vector<int> best=Tabu_search(r,diff_in_us(&finish, &start));
-            init_graph(best);
-            PAIR result=mcmf(0, n-1);
-            if(result.first==need&&(result.second+best.size()<consumerNum*serverPrice)){
-                getfAndedge();
-                writeresult(result_file);
-            }
-        }
-        else
-        {
-            vector<int> best=Tabu_search(r,diff_in_us(&finish, &start));
-            init_graph(best);
-            PAIR result=mcmf(0, n-1);
-            if(result.first==need&&(result.second+best.size()<consumerNum*serverPrice)){
-                getfAndedge();
-                writeresult(result_file);
-            }
-            
-        }
-        //        cout<<"best:"<<result.second+best.size()*serverPrice<<endl;
-        //        cout<<"直接挂载："<<consumerNum*serverPrice<<endl;
-    }
-    
+//    if(n<700)
+//    {
+//        gettimeofday(&finish, NULL);
+//        if(n>200){
+//            vector<int> best=Tabu_search(r,diff_in_us(&finish, &start));
+//            init_graph(best);
+//            PAIR result=mcmf(0, n-1);
+//            getServer_level(best);
+//            if(result.first==need&&(result.second+CostofServerAndDeployment(best)<originprice)){
+//                getfAndedge();
+//                writeresult(result_file);
+//            }
+//        }
+//        else
+//        {
+//            vector<int> best=Tabu_search(r,diff_in_us(&finish, &start));
+//            init_graph(best);
+//            PAIR result=mcmf(0, n-1);
+//            getServer_level(best);
+//            if(result.first==need&&(result.second+CostofServerAndDeployment(best)<originprice)){
+//                getfAndedge();
+//                writeresult(result_file);
+//            }
+//            
+//        }
+//        //        cout<<"best:"<<result.second+best.size()*serverPrice<<endl;
+//        //        cout<<"直接挂载："<<consumerNum*serverPrice<<endl;
+//    }
+//    
     
     print_time("End");
     

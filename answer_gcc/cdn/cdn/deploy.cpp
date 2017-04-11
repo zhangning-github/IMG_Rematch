@@ -7,6 +7,9 @@ using namespace std;
 double alpha=0.1; //热度列表需用到的参数
 double beta=0.1;  //热度列表需用到的参数
 extern int serverPrice;//服务器单价
+extern vector<server>serverInfo;//存储不同档次服务器的输出能力和对应的费用信息
+extern map<int,int>nodePrice;//存储不同网络节点的部署费用
+int originprice;//存储初始解的费用
 extern vector<int> occurrence;//出现次数
 extern map<int,int> node_consumer; //记录consumer和与其相连的点（<node,consumer>）
 int tabuList_len=20;                      //禁忌列表大小，初始化为3
@@ -153,128 +156,125 @@ PAIR selectMin(int judge[N][N])
     }
     return r;
 }
-
-//获得初始解,
-initial getinitial(long long time,double arg1,double arg2)
-{
-    initial r;
-    PAIR cur,cur2;
-    int now;
-    vector<int> save=selected;
-    int originprice=consumerNum*serverPrice;
-    int bestprice=originprice;
+void highlevel(long long time,double arg1,double arg2){
     long long time_used;
     struct timeval start,finish;
     int judge[N][N];
+    PAIR cur,cur2;
+    int now;
+    int bestprice=originprice;
+    vector<int> save=selected;
     gettimeofday(&start,NULL);
-    init_graph(selected);
-    mcmf(0, n-1);
-    if (n>700)
+    TIME=87000000;
+    for(int i=0;i<selected.size();i++)
     {
-        TIME=88000000;
-        for(int i=0;i<selected.size();i++)
+        gettimeofday(&finish, NULL);
+        time_used=diff_in_us(&finish, &start)+time;
+        if(time_used>TIME) {
+            cout<<"Time is used!"<<endl;
+            break;
+        }
+        vector<int> s=selected;
+        auto it=find(s.begin(),s.end(),selected[i]);
+        s.erase(it);
+        init_graph(s);
+        cur=mcmf(0,n-1);
+        getf();
+        int now=cur.second+CostofServerAndDeployment(s);
+        if(cur.first==need&&now<bestprice)
         {
-            gettimeofday(&finish, NULL);
-            time_used=diff_in_us(&finish, &start)+time;
-            if(time_used>TIME) {
-                cout<<"Time is used!"<<endl;
-                break;
-            }
-            vector<int> s=selected;
-            auto it=find(s.begin(),s.end(),selected[i]);
-            s.erase(it);
-            init_graph(s);
-            cur=mcmf(0,n-1);
-            int now=cur.second+(int)s.size()*serverPrice;
-            if(cur.first==need&&now<bestprice)
-            {
-                if(bestprice-now>serverPrice/arg1)
-                {
-                    bestprice=now;
-                    selected=s;
-                    i--;
-                }
-            }
-            else
-                bad.push_back(selected[i]);
-        }
-        for(int i=0;i<selected.size();i++){
-            for(int j=0;j<selected.size();j++){
-                if(c[selected[i]][selected[j]]>0)
-                    judge[selected[i]][selected[j]]=c[selected[j]][n-1];
-            }
-        }
-        for(int i=0;i<selected.size();i++){
-            judge[selected[i]][selected[i]]=10000;
-        }
-        
-        while(true)
-        {
-            gettimeofday(&finish, NULL);
-            time_used=diff_in_us(&finish, &start)+time;
-            if(time_used>TIME) {
-                cout<<"Time is used!"<<endl;
-                break;
-            }
-            
-            PAIR index=selectMin(judge);
-            if(index.first==-1)
-                break;
-            
-            //if(c[index.second][n-1]*price[index.first][index.second]<serverPrice)
-            {
-                vector<int> s=selected;
-                auto it=find(s.begin(),s.end(),index.second);
-                s.erase(it);
-                init_graph(s);
-                cur=mcmf(0,n-1);
-                int now=cur.second+(int)s.size()*serverPrice;
-                if(cur.first==need&&(now<bestprice)&&(bestprice-now>serverPrice/arg2))
-                {
-                    bestprice=now;
-                    for(auto t=save.begin();t!=save.end();t++){
-                        judge[index.second][*t]=10000;
-                    }
-                    selected=s;
-                    
-                }
-                else
-                    bad.push_back(index.second);
-                
-            }
-            
-        }
-        for(int i=0;i<selected.size();i++)
-        {
-            gettimeofday(&finish, NULL);
-            time_used=diff_in_us(&finish, &start)+time;
-            if(time_used>TIME) {
-                cout<<"Time is used!"<<endl;
-                break;
-            }
-            vector<int> s=selected;
-            auto it=find(s.begin(),s.end(),selected[i]);
-            s.erase(it);
-            init_graph(s);
-            cur=mcmf(0,n-1);
-            int now=cur.second+(int)s.size()*serverPrice;
-            if(cur.first==need&&(now<bestprice))
+            if(bestprice-now>serverPrice/arg1)
             {
                 bestprice=now;
                 selected=s;
+                i--;
             }
+        }
+        else
+            bad.push_back(selected[i]);
+    }
+    for(int i=0;i<selected.size();i++){
+        for(int j=0;j<selected.size();j++){
+            if(c[selected[i]][selected[j]]>0)
+                judge[selected[i]][selected[j]]=c[selected[j]][n-1];
+        }
+    }
+    for(int i=0;i<selected.size();i++){
+        judge[selected[i]][selected[i]]=10000;
+    }
+    
+    while(true)
+    {
+        gettimeofday(&finish, NULL);
+        time_used=diff_in_us(&finish, &start)+time;
+        if(time_used>TIME) {
+            cout<<"Time is used!"<<endl;
+            break;
+        }
+        
+        PAIR index=selectMin(judge);
+        if(index.first==-1)
+            break;
+        
+        //if(c[index.second][n-1]*price[index.first][index.second]<serverPrice)
+        {
+            vector<int> s=selected;
+            auto it=find(s.begin(),s.end(),index.second);
+            s.erase(it);
+            init_graph(s);
+            cur=mcmf(0,n-1);
+            int now=cur.second+cur.second+CostofServerAndDeployment(s);
+            if(cur.first==need&&(now<bestprice)&&(bestprice-now>serverPrice/arg2))
+            {
+                bestprice=now;
+                for(auto t=save.begin();t!=save.end();t++){
+                    judge[index.second][*t]=10000;
+                }
+                selected=s;
+                
+            }
+            else
+                bad.push_back(index.second);
             
         }
         
+    }
+    for(int i=0;i<selected.size();i++)
+    {
+        gettimeofday(&finish, NULL);
+        time_used=diff_in_us(&finish, &start)+time;
+        if(time_used>TIME) {
+            cout<<"Time is used!"<<endl;
+            break;
+        }
+        vector<int> s=selected;
+        auto it=find(s.begin(),s.end(),selected[i]);
+        s.erase(it);
+        init_graph(s);
+        cur=mcmf(0,n-1);
+        int now=cur.second+cur.second+CostofServerAndDeployment(s);
+        if(cur.first==need&&(now<bestprice))
+        {
+            bestprice=now;
+            selected=s;
+        }
         
     }
+
+}
+//获得初始解,
+initial getinitial()
+{
+    initial r;
+    originprice=CostofServerAndDeployment(selected);
+
     
     //    cout<<"min cost"<<bestprice<<endl;
     //    cout<<"直接挂载："<<consumerNum*serverPrice<<endl;
     //    cout<<selected.size()<<endl;
     //    cout<<consumerNum<<endl;
     r.s = (int)selected.size();
-    r.cost=cur.second;
+    r.cost=0;
     return r;
 }
 
@@ -401,6 +401,28 @@ void updateBad(int value){
     }
     bad.push_back(value);
 }
+
+//根据某一种特定的部署方案，返回购买相应档次的服务器和部署服务器的总成本
+int CostofServerAndDeployment(vector<int> solution) {
+    int cost=0;
+    int totalflow;
+    for(auto depot:solution) {
+        totalflow = 0;
+        for (int i=0; i<n; i++) {
+            if(f[depot][i]>0)
+                totalflow+=f[depot][i];
+        }
+        for(auto server:serverInfo) {
+            if(server.capability>totalflow) {
+                cost+=server.serverPrice;
+                break;
+            }
+        }
+        cost+=nodePrice[depot];
+    }
+    return cost;
+}
+
 //禁忌搜索，用于初中级用例
 vector<int> Tabu_search(initial r,long long time) {
     //生成Tlist列表
@@ -439,7 +461,7 @@ vector<int> Tabu_search(initial r,long long time) {
         for(auto valueof_dropN:op) {
             init_graph(valueof_dropN.solution);
             auto cur=mcmf(0,n-1);
-            auto tmpcost = cur.second+valueof_dropN.solution.size()*serverPrice;
+            auto tmpcost = cur.second+CostofServerAndDeployment(valueof_dropN.solution);
             if(cur.first!=need)continue;
             //            cout<<"drop cost："<<tmpcost<<endl;
             drop_tmp.solution = valueof_dropN.solution;
@@ -482,7 +504,7 @@ vector<int> Tabu_search(initial r,long long time) {
             for(auto it:op) {
                 init_graph(it.solution);
                 auto cur=mcmf(0,n-1);
-                auto tmpcost = cur.second+it.solution.size()*serverPrice;
+                auto tmpcost = cur.second+CostofServerAndDeployment(it.solution);
                 if(cur.first!=need)continue;
                 if(tmpcost<curcost) {
                     int tmpcount=0;
