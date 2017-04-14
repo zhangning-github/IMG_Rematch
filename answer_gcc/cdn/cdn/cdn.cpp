@@ -23,7 +23,7 @@ extern int originprice;//存储初始解的费用
 //map<int,int> bwMap;//从1开始
 int price[N][N]={0}; //每条边的单位租用费
 int consumerNum; //消费节点数量
-int serverPrice;//服务器单价
+//int serverPrice;//服务器单价
 int need;   //服务器总需求
 vector<int> bw;     //存储每个节点的总带宽
 vector<int> sortbyBw;//将节点id按bw由大到小排序

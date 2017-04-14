@@ -6,7 +6,7 @@
 using namespace std;
 double alpha=0.1; //热度列表需用到的参数
 double beta=0.1;  //热度列表需用到的参数
-extern int serverPrice;//服务器单价
+//extern int serverPrice;//服务器单价
 extern vector<server>serverInfo;//存储不同档次服务器的输出能力和对应的费用信息
 extern map<int,int>nodePrice;//存储不同网络节点的部署费用
 int originprice;//存储初始解的费用
@@ -174,6 +174,18 @@ void highlevel(long long time,double arg1,double arg2){
         mini2=min(it->serverPrice,mini2);
     }
     threshold=max(mini1,mini2);
+    
+    vector<PAIR>pair_vector;
+    for(auto it=selected.begin();it!=selected.end();it++){
+        pair_vector.push_back(make_pair(*it,nodePrice[*it]));
+    }
+    sort(pair_vector.begin(), pair_vector.end(), cmp);
+    selected.clear();
+    for (vector<PAIR>::iterator curr = pair_vector.begin(); curr != pair_vector.end(); ++curr)
+    {
+        selected.push_back(curr->first);
+    }
+
     TIME=87000000;
     int count=0;
     for(int i=0;i<selected.size();i++)
@@ -239,7 +251,8 @@ void highlevel(long long time,double arg1,double arg2){
             cur=mcmf(0,n-1);
             getPartf();
             now=cur.second+CostofServerAndDeployment(s);
-            if(cur.first==need&&now<bestprice&&(bestprice-now>threshold/arg2))
+            //if(cur.first==need&&now<bestprice&&(bestprice-now>threshold/arg2))
+            if(cur.first==need&&now<bestprice)
             {
                 bestprice=now;
                 for(auto t=save.begin();t!=save.end();t++){
@@ -263,6 +276,7 @@ void highlevel(long long time,double arg1,double arg2){
             cout<<"3.Time is used!"<<endl;
             break;
         }
+        if(find(bad.begin(),bad.end(),selected[i])!=bad.end())continue;
         vector<int> s=selected;
         auto it=find(s.begin(),s.end(),selected[i]);
         s.erase(it);
@@ -460,7 +474,7 @@ vector<int> Tabu_search(initial r,long long time) {
     //vector<valueof_insertN> insertN;         //存储inserN候选解
     vector<pair<int, int>> tabuList;               //存储禁忌列表
     //auto r = getinitial();
-    A = r.cost+r.s*serverPrice;
+    A = r.cost;
     //    cout<<"best cost："<<A<<endl;
     vector<Solution_and_cost> nerbou;           //存储候选解及其花费（按花费从高到低排序）
     
